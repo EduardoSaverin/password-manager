@@ -1,6 +1,11 @@
 import os
 import config
 from password_strength import PasswordPolicy, PasswordStats
+from hashlib import pbkdf2_hmac
+from Crypto.Cipher import AES
+import filesystem
+import json
+from cipher import AESCipher
 
 policy = PasswordPolicy.from_names(
     length=8,
@@ -8,6 +13,8 @@ policy = PasswordPolicy.from_names(
     numbers=1,
     special=1
 )
+
+aes = AESCipher()
 
 
 def check_if_already_initialized() -> bool:
@@ -18,8 +25,7 @@ def check_if_already_initialized() -> bool:
     """
     if not os.path.exists(config.DATA_FOLDER):
         return True
-    directory = os.listdir(config.DATA_FOLDER)
-    if len(directory) == 0:
+    elif os.path.exists(config.DATA_FOLDER) and len(os.listdir(config.DATA_FOLDER)) != 0:
         return True
     return False
 
@@ -36,7 +42,7 @@ def check_password_eligibility(password: str) -> bool:
         password (str): password
 
     Returns:
-        [bool]: True if all conditions met otherwise False
+        bool: True if all conditions met otherwise False
     """
     # output comes empty [] if everything is right
     output = policy.test(password)
@@ -50,29 +56,97 @@ def check_password_strength(password: str) -> float:
         password (str): password
 
     Returns:
-        [float]: strength on scale of 0.00 to 0.99
+        float: strength on scale of 0.00 to 0.99
     """
     stats = PasswordStats(password)
     return stats.strength()
 
 
 def get_strength_string(strength: int) -> str:
+    print(strength)
     if strength >= 0.66:
         return "Strong"
-    elif strength >= 0.4 and strength < 0.66:
+    elif strength >= 0.3 and strength < 0.66:
         return "Fair"
-    elif strength < 0.4:
+    elif strength < 0.3:
         return "Weak"
 
 
 def read_password_and_check(pwd_type: str) -> str:
     password = ''
     while True:
-        password = input(pwd_type)
-        if check_password_eligibility(password):
+        password = input(f'{pwd_type} : ')
+        if not check_password_eligibility(password):
             print("Entered password doesn't satisy all(Min Len 8, One Special Character, One Upper Case, One Number) conditions.")
         else:
             break
     print(
-        f'Password Strength :{get_strength_string(check_password_strength(password))}')
+        f'Password Strength : {get_strength_string(check_password_strength(password))}')
     return password
+
+
+def generate_mastermac(master_pwd: str) -> str:
+    salt: str = os.urandom(16)
+    filesystem.write_salt(salt)
+
+    derived_key = pbkdf2_hmac('sha512', master_pwd.encode(), salt, 10000)
+    key = derived_key.hex()
+    filesystem.check_path_dirs(config.MASTERMAC_FILE)
+    with open(config.MASTERMAC_FILE, 'wb') as file:
+        file.write(key.encode())
+    return key
+
+
+def store_password(key: str, password: str) -> None:
+    key: str = filesystem.read_mastermac()
+    ciphertext = aes.encrypt(password, key)
+    json_data = filesystem.read_passwords_json()
+    json_data[key] = ciphertext
+    filesystem.write_passwords_json(json.dumps(json_data))
+
+
+def auth(master_pwd: str) -> bool:
+    verified = False
+    salt = filesystem.read_salt()
+    derived_key = pbkdf2_hmac('sha512', master_pwd, salt)
+    key = derived_key.hex()
+    if key == filesystem.read_mastermac():
+        verified = True
+    return verified
+
+
+def get_password(key: str) -> str:
+    """Returns password from stored passwords
+
+    Args:
+        key (str): Name of the key with which password was stored.
+
+    Returns:
+        str: stored password or None either Key is invalid or password is not found
+    """
+    if not key:
+        print('Supplied KEY is not valid')
+        return
+    json_dump = filesystem.read_passwords_json()
+    enc_password: bytes = json_dump.get(key)
+    password = aes.decrypt(enc_password, key)
+    return password.decode('utf-8')
+
+
+def delete_password(key: str) -> str:
+    """Deletes key password from stored Passwords
+
+    Args:
+        key (str): Name of the key whose password to be removed.
+
+    Returns:
+        str: stored password or None either Key is invalid or password is not found
+    """
+    if not key:
+        print('Supplied KEY is not valid')
+        return
+    json_dump = filesystem.read_passwords_json()
+    value = json_dump[key]
+    del json_dump[key]
+    filesystem.write_passwords_json(json.dumps(json_dump))
+    return value
