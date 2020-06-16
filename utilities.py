@@ -89,7 +89,8 @@ def generate_mastermac(master_pwd: str) -> str:
     salt: str = os.urandom(16)
     filesystem.write_salt(salt)
 
-    derived_key = pbkdf2_hmac('sha512', master_pwd.encode(), salt, 10000)
+    derived_key = pbkdf2_hmac(
+        'sha512', master_pwd.encode(), salt, 10000, dklen=16)
     key = derived_key.hex()
     filesystem.check_path_dirs(config.MASTERMAC_FILE)
     with open(config.MASTERMAC_FILE, 'wb') as file:
@@ -98,8 +99,8 @@ def generate_mastermac(master_pwd: str) -> str:
 
 
 def store_password(key: str, password: str) -> None:
-    key: str = filesystem.read_mastermac()
-    ciphertext = aes.encrypt(password, key)
+    salt: str = filesystem.read_mastermac()
+    ciphertext = aes.encrypt(password, salt)
     json_data = filesystem.read_passwords_json()
     json_data[key] = ciphertext
     filesystem.write_passwords_json(json.dumps(json_data))
@@ -128,9 +129,10 @@ def get_password(key: str) -> str:
         print('Supplied KEY is not valid')
         return
     json_dump = filesystem.read_passwords_json()
-    enc_password: bytes = json_dump.get(key)
-    password = aes.decrypt(enc_password, key)
-    return password.decode('utf-8')
+    enc_password: str = json_dump.get(key)
+    salt: str = filesystem.read_mastermac()
+    password = aes.decrypt(enc_password, salt)
+    return password
 
 
 def delete_password(key: str) -> str:

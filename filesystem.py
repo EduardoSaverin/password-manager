@@ -22,16 +22,20 @@ def write_salt(salt: str) -> None:
         return salt_file.write(salt)
 
 
-def read_passwords_json() -> Dict[str, bytes]:
-    json_str = '{}'
-    with open(config.PWD_STORE_FILE, 'rb') as file:
+def read_passwords_json() -> Dict[str, str]:
+    json_str = "{}"
+    if not os.path.exists(config.PWD_STORE_FILE):
+        return json.loads(json_str)
+    with open(config.PWD_STORE_FILE, 'r') as file:
         json_str = file.read()
+    if not json_str:
+        json_str = "{}"
     return json.loads(json_str)
 
 
 def write_passwords_json(json_str: str) -> None:
     check_path_dirs(config.PWD_STORE_FILE)
-    with open(config.PWD_STORE_FILE, 'wb') as file:
+    with open(config.PWD_STORE_FILE, 'w') as file:
         file.write(json_str)
 
 

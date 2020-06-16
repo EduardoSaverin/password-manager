@@ -1,16 +1,27 @@
+from Crypto import Random
 from Crypto.Cipher import AES
+import base64
+from binascii import unhexlify, hexlify
+import os
+
+IV = "qwertyuiopasdfgh"
 
 
-class AESCipher(object):
+BS = 16
+def pad(s): return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+def unpad(s): return s[:-ord(s[len(s)-1:])]
+
+
+class AESCipher:
     def __init__(self):
         super().__init__()
 
-    def encrypt(self, password: str, key: str) -> bytes:
-        cipher = AES.new(key, AES.MODE_PGP)
-        ciphertext = cipher.encrypt(password)
-        return ciphertext
+    def encrypt(self, raw, salt):
+        raw = pad(raw)
+        cipher = AES.new(salt, AES.MODE_CBC, IV.encode())
+        return hexlify(cipher.encrypt(raw.encode())).decode()
 
-    def decrypt(self, enc_password: bytes, key: str) -> bytes:
-        cipher = AES.new(key, AES.MODE_PGP)
-        ciphertext = cipher.decrypt(enc_password)
-        return ciphertext
+    def decrypt(self, enc, salt):
+        enc = unhexlify(enc)
+        cipher = AES.new(salt, AES.MODE_CBC, IV.encode())
+        return unpad(cipher.decrypt(enc)).decode()

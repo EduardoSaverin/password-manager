@@ -44,7 +44,7 @@ def show_options():
     if option == 1:
         key = input('Please enter key : ')
         password = input('Password : ')
-        print(utilities.store_password(key, password))
+        utilities.store_password(key, password)
     elif option == 2:
         key = input('Please enter key : ')
         print(utilities.delete_password(key))
@@ -60,7 +60,7 @@ def show_options():
                 f"Password for Key {key} not found. Try adding new password instead")
     elif option == 4:
         key = input('Please enter key : ')
-        print(utilities.get_password(key))
+        print(f'Password for Key {key} is {utilities.get_password(key)}')
     elif option == 5:
         initialize()
     elif option == 6:
