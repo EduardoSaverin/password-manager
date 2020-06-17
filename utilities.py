@@ -131,7 +131,7 @@ def get_password(key: str) -> str:
     """
     if not key:
         print('Supplied KEY is not valid')
-        return
+        return None
     json_dump = filesystem.read_passwords_json()
     enc_password: str = json_dump.get(key)
     salt: str = filesystem.read_mastermac()
