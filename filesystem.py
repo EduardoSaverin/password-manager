@@ -22,6 +22,17 @@ def write_salt(salt: str) -> None:
         return salt_file.write(salt)
 
 
+def read_block_size() -> str:
+    with open(config.BLOCK_FILE, 'rb') as block_file:
+        return block_file.read()
+
+
+def write_block_size(block_size: str) -> None:
+    check_path_dirs(config.BLOCK_FILE)
+    with open(config.BLOCK_FILE, 'wb') as block_file:
+        return block_file.write(block_size)
+
+
 def read_passwords_json() -> Dict[str, str]:
     json_str = "{}"
     if not os.path.exists(config.PWD_STORE_FILE):

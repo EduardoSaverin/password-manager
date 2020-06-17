@@ -1,5 +1,6 @@
 import utilities
 import sys
+import config
 
 
 def initialize():
@@ -14,7 +15,6 @@ def initialize():
                     break
                 if proceed == 'n':
                     return
-    print("Welcome to Python Password Manager")
     print('''Enter master password that will be used for:
     1. To get the passwords.
     2. To add/modify passwords.
@@ -27,6 +27,8 @@ def initialize():
 
 
 def show_options():
+    print('\n')
+    print(f"Welcome to Python Password Manager {config.APP_VERSION}")
     if not utilities.check_if_already_initialized():
         initialize()
 
@@ -47,7 +49,9 @@ def show_options():
         utilities.store_password(key, password)
     elif option == 2:
         key = input('Please enter key : ')
-        print(utilities.delete_password(key))
+        password = utilities.delete_password(key)
+        if password is not None:
+            print(f'Password was {password}')
     elif option == 3:
         key = input('Please enter key : ')
         value = utilities.get_password(key)

@@ -87,8 +87,9 @@ def read_password_and_check(pwd_type: str) -> str:
 
 def generate_mastermac(master_pwd: str) -> str:
     salt: str = os.urandom(16)
+    block_size = os.urandom(16)
     filesystem.write_salt(salt)
-
+    filesystem.write_block_size(block_size)
     derived_key = pbkdf2_hmac(
         'sha512', master_pwd.encode(), salt, 10000, dklen=16)
     key = derived_key.hex()
@@ -102,6 +103,9 @@ def store_password(key: str, password: str) -> None:
     salt: str = filesystem.read_mastermac()
     ciphertext = aes.encrypt(password, salt)
     json_data = filesystem.read_passwords_json()
+    if key in json_data:
+        print(
+            f'Password for Key {key} already exists. You can try modifying password if needed.')
     json_data[key] = ciphertext
     filesystem.write_passwords_json(json.dumps(json_data))
 
@@ -146,9 +150,12 @@ def delete_password(key: str) -> str:
     """
     if not key:
         print('Supplied KEY is not valid')
-        return
+        return None
     json_dump = filesystem.read_passwords_json()
-    value = json_dump[key]
+    if key not in json_dump:
+        print(f'Key {key} does not exist.')
+        return None
     del json_dump[key]
+    password = get_password(key)
     filesystem.write_passwords_json(json.dumps(json_dump))
-    return value
+    return password

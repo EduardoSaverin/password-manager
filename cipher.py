@@ -3,6 +3,7 @@ from Crypto.Cipher import AES
 import base64
 from binascii import unhexlify, hexlify
 import os
+import filesystem
 
 IV = "qwertyuiopasdfgh"
 
@@ -18,10 +19,10 @@ class AESCipher:
 
     def encrypt(self, raw, salt):
         raw = pad(raw)
-        cipher = AES.new(salt, AES.MODE_CBC, IV.encode())
+        cipher = AES.new(salt, AES.MODE_CBC, filesystem.read_block_size())
         return hexlify(cipher.encrypt(raw.encode())).decode()
 
     def decrypt(self, enc, salt):
         enc = unhexlify(enc)
-        cipher = AES.new(salt, AES.MODE_CBC, IV.encode())
+        cipher = AES.new(salt, AES.MODE_CBC, filesystem.read_block_size())
         return unpad(cipher.decrypt(enc)).decode()
