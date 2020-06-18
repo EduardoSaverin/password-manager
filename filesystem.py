@@ -11,6 +11,11 @@ def read_mastermac() -> str:
     return key
 
 
+def write_mastermac(key: str) -> None:
+    with open(config.MASTERMAC_FILE, 'wb') as file:
+        file.write(key.encode())
+
+
 def read_salt() -> str:
     with open(config.SALT_FILE, 'rb') as salt_file:
         return salt_file.read()

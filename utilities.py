@@ -7,6 +7,7 @@ import filesystem
 import json
 from cipher import AESCipher
 
+ITERATIONS = 10000
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=1,
@@ -21,11 +22,9 @@ def check_if_already_initialized() -> bool:
     """checks if password manager is already initialized
 
     Returns:
-        boolean: True if data directory already exists
+        boolean: True if data directory already exists, False Otherwise
     """
-    if not os.path.exists(config.DATA_FOLDER):
-        return True
-    elif os.path.exists(config.DATA_FOLDER) and len(os.listdir(config.DATA_FOLDER)) != 0:
+    if os.path.exists(config.DATA_FOLDER) and len(os.listdir(config.DATA_FOLDER)) != 0:
         return True
     return False
 
@@ -42,7 +41,7 @@ def check_password_eligibility(password: str) -> bool:
         password (str): password
 
     Returns:
-        bool: True if all conditions met otherwise False
+        bool: True if all conditions met, False Otherwise
     """
     # output comes empty [] if everything is right
     output = policy.test(password)
@@ -91,11 +90,10 @@ def generate_mastermac(master_pwd: str) -> str:
     filesystem.write_salt(salt)
     filesystem.write_block_size(block_size)
     derived_key = pbkdf2_hmac(
-        'sha512', master_pwd.encode(), salt, 10000, dklen=16)
-    key = derived_key.hex()
+        'sha512', master_pwd.encode(), salt, ITERATIONS, dklen=16)
+    key: str = derived_key.hex()
     filesystem.check_path_dirs(config.MASTERMAC_FILE)
-    with open(config.MASTERMAC_FILE, 'wb') as file:
-        file.write(key.encode())
+    filesystem.write_mastermac(key)
     return key
 
 
@@ -113,9 +111,10 @@ def store_password(key: str, password: str) -> None:
 def auth(master_pwd: str) -> bool:
     verified = False
     salt = filesystem.read_salt()
-    derived_key = pbkdf2_hmac('sha512', master_pwd, salt)
-    key = derived_key.hex()
-    if key == filesystem.read_mastermac():
+    derived_key = pbkdf2_hmac(
+        'sha512', master_pwd.encode(), salt, ITERATIONS, dklen=16)
+    key = derived_key
+    if key.hex() == filesystem.read_mastermac().decode():
         verified = True
     return verified
 

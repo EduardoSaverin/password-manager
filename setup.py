@@ -44,27 +44,43 @@ def show_options():
     ''')
     option = int(input('Choose Option : '))
     if option == 1:
-        key = input('Please enter key : ')
-        password = input('Password : ')
-        utilities.store_password(key, password)
-    elif option == 2:
-        key = input('Please enter key : ')
-        password = utilities.delete_password(key)
-        if password is not None:
-            print(f'Password was {password}')
-    elif option == 3:
-        key = input('Please enter key : ')
-        value = utilities.get_password(key)
-        if value:
-            password = input("New Password : ")
-            utilities.delete_password(key)
-            utilities.store_encrypted_password(key, password)
+        master_password = input('Please enter master password : ')
+        if not utilities.auth(master_password):
+            print('Authentication failed')
         else:
-            print(
-                f"Password for Key {key} not found. Try adding new password instead")
+            key = input('Please enter key : ')
+            password = input('Password : ')
+            utilities.store_password(key, password)
+    elif option == 2:
+        master_password = input('Please enter master password : ')
+        if not utilities.auth(master_password):
+            print('Authentication failed')
+        else:
+            key = input('Please enter key : ')
+            password = utilities.delete_password(key)
+            if password is not None:
+                print(f'Password was {password}')
+    elif option == 3:
+        master_password = input('Please enter master password : ')
+        if not utilities.auth(master_password):
+            print('Authentication failed')
+        else:
+            key = input('Please enter key : ')
+            value = utilities.get_password(key)
+            if value:
+                password = input("New Password : ")
+                utilities.delete_password(key)
+                utilities.store_encrypted_password(key, password)
+            else:
+                print(
+                    f"Password for Key {key} not found. Try adding new password instead")
     elif option == 4:
-        key = input('Please enter key : ')
-        print(f'Password for Key {key} is {utilities.get_password(key)}')
+        master_password = input('Please enter master password : ')
+        if not utilities.auth(master_password):
+            print('Authentication failed')
+        else:
+            key = input('Please enter key : ')
+            print(f'Password for Key {key} is {utilities.get_password(key)}')
     elif option == 5:
         initialize()
     elif option == 6:
