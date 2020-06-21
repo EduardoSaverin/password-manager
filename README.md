@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* Python >= 3.5 (Because we are using Python typing that was introduced in Python 3.5)
+* Python >= 3.6
 * All modules mentioned in _Pipfile_
 
 ## Installing Pipenv
